@@ -1,0 +1,474 @@
+//
+CROSS_COMPILE=arm-none-linux-gnueabi-
+PATH="/home/zgd/arm-2009q1/bin:${PATH}"
+PATH="/usr/bin:${PATH}"
+export PATH CROSS_COMPILE
+
+
+// 移植ALSA库
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/alsa-lib --enable-shared --disable-python --with-configdir=/usr/local/share --with-plugindir=/usr/local/lib/alsa-lib
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/alsa-lib_debug --enable-shared --disable-python --with-debug=yes --with-configdir=/usr/local/share --with-plugindir=/usr/local/lib/alsa-lib
+
+
+//PC
+
+./configure --prefix=/home/zhao/linux-app/install/alsa-lib-pc --enable-shared --disable-python
+
+make
+sudo -s
+export PATH=$PATH:/home/zgd/arm-2009q1/bin   (原因：alsa库载make install时也需要交叉编译，需要提供路径）
+make install
+
+// 移植alsa-utils
+
+LDFLAGS="-L/home/zgd/alsa/alsa-lib/lib -lasound" CFLAGS="-I/home/zgd/alsa/alsa-lib/include" ./configure --host=arm-none-linux-gnueabi --prefix=/home/zgd/alsa/alsa-utils --disable-alsamixer --with-alsa-prefix=/home/zgd/alsa/alsa-lib/lib/ --with-alsa-inc-prefix=/home/zgd/alsa/alsa-lib/include/ -disable-alsamixer --disable-xmlto
+
+在编译时出现错误：
+mv: cannot stat make[2]: Entering directory `/usr/src/alsa/alsa-utils-1.0.15/alsaconf/po'
+mv: 无法确认 ‘t-ja.gmo’: No such file or directory
+解决办法是手工创建一个空文件~/alsa-utils-10.15/alsaconf/po/t-ja.gmo
+再重新make, 又提示另一个文件没有，用同样的办法创建空文件
+
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/alsa-utils CFLAGS="-I/home/zhao/linux-app/install/alsa-lib/include" LDFLAGS="-L/home/zhao/linux-app/install/alsa-lib/lib -lasound" --disable-alsamixer --disable-xmlto --with-alsa-inc-prefix=/home/zhao/linux-app/install/alsa-utils/include 
+
+
+
+
+
+// 移植QT库
+// qt-4.8.6
+
+./configure -prefix /home/zhao/linux-app/install/qt-4.8.6 -release -shared -fast -opensource -no-3dnow -no-openssl -no-libmng -no-opengl -no-qvfb -no-glib -no-phonon  -nomake examples -nomake tools -nomake docs -nomake demos -qt-sql-sqlite -qt-libjpeg -qt-zlib -qt-libpng -qt-mouse-tslib -xplatform qws/linux-arm-g++ -embedded arm -little-endian -qt-freetype -lrt -confirm-license -no-pch -I/home/zhao/linux-app/install/tslib-1.4/include/ -L/home/zhao/linux-app/install/tslib-1.4/lib/
+
+make 
+make install
+
+./configure -prefix /home/zhao/linux-app/install/qt-debug -debug -shared -fast -opensource -no-3dnow -no-openssl -no-libmng -no-opengl -no-qvfb -no-glib -no-phonon  -nomake examples -nomake tools -nomake docs -nomake demos -qt-sql-sqlite -qt-libjpeg -qt-zlib -qt-libpng -qt-mouse-tslib -xplatform qws/linux-arm-g++ -embedded arm -little-endian -qt-freetype -lrt -confirm-license -no-pch -I/home/zhao/linux-app/install/tslib-1.4/include/ -L/home/zhao/linux-app/install/tslib-1.4/lib/
+
+
+
+
+
+// 移植jpeg-6b图形库
+
+./configure CC=arm-linux-gnueabihf-gcc --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/jpeg-9b --enable-shared --enable-static
+
+
+
+
+// 移植libmad库
+
+./configure --enable-fpm=arm --host=arm-linux --disable-shared --disable-debugging --prefix=/home/zgd/app/libmad CC=arm-none-linux-gnueabi-gcc
+
+./configure --host=arm-none-linux-gnueabi --disable-shared --disable-debugging --prefix=/home/zgd/app/libmad
+
+
+
+// 移植MPlayer-1.0rc4
+
+./configure --host-cc=gcc --enable-cross-compile --cc=arm-linux-gnueabihf-gcc --target=arm-linux --enable-fbdev --enable-cross-compile --enable-mad --enable-ossaudio --enable-libavcodec_a --disable-win32dll --disable-dvdread --disable-dvdnav --disable-dvdread-internal --disable-mencoder --disable-ivtv --disable-live --disable-mp3lib --language=en --disable-armv5te --disable-armv6 --prefix=/home/zhao/linux-app/install/mplayer 2>&1 | tee logfile
+
+./configure --host-cc=gcc --cc=arm-none-linux-gnueabi-gcc --target=arm-armv4-linux --disable-win32dll --disable-dvdread --enable-fbdev --disable-mencoder --enable-mad
+
+
+在make install时可能会出现：
+install -m 755 -s mplayer /home/zgd/alsa/mplayer/bin
+strip: Unable to recognise the format of the input file
+
+解决方法：
+修改makefile文件，在install -m 755前面加上
+INSTALLSTRIP :=  #
+
+./configure --prefix=/home/zhao/linux-app/install/mplayer --cc=arm-linux-gnueabihf-gcc --host-cc=gcc --target=arm-linux --disable-mencoder --disable-live --disable-mp3lib --disable-win32dll --disable-dvb --disable-dvdread --disable-dvdnav  --disable-dvdread-internal  --disable-tv --disable-ivtv --enable-fbdev --disable-sdl --enable-cross-compile
+
+./configure --prefix=/home/zhao/linux-app/install/mplayer --enable-cross-compile --cc=arm-linux-gnueabihf-gcc --host-cc=gcc --target=arm-linux --enable-fbdev --enable-alsa --disable-win32dll --disable-dvdnav --disable-mencoder --disable-ivtv --disable-live
+
+
+//ffmpeg
+./configure --prefix=/home/zhao/linux-app/install/ffmpeg --cross-prefix=arm-linux-gnueabihf- --enable-cross-compile --arch=arm --target-os=linux --cc=arm-linux-gnueabihf-gcc --enable-shared
+
+
+// 移植udev
+./configure --prefix=/home/zgd/dim3517/udev --target=arm-none-linux-gnueabi CC=arm-none-linux-gnueabi-gcc --host=arm-none-linux-gnueabi LD=arm-none-linux-gnueabi-ld GLIB_CFLAGS=/home/zgd/dim3517/udev GLIB_LIBS=/home/zgd/dim3517/udev
+
+./configure --prefix=/home/zhao/linux-app/udev --host=arm-linux-gnueabihf LD=arm-linux-gnueabihf-ld GLIB_CFLAGS=/home/zhao/linux-app/udev GLIB_LIBS=/home/zhao/linux-app/udev
+
+
+BLKID_CFLAGS="-I/usr/include/blkid" BLKID_LIBS="-L/lib -lblkid" KMOD_CFLAGS="-I/usr/include" KMOD_LIBS="-L/lib -lkmod" CC=arm-linux-gnueabihf-gcc LD=arm-linux-gnueabihf-ld ./configure --prefix=/home/zhao/linux-app/install/udev-182 --host=arm-linux-gnueabihf --with-rootprefix='' --bindir=/sbin --sysconfdir=/etc --libexecdir=/lib --enable-rule_generator --disable-introspection --disable-keymap --disable-gudev --with-usb-ids-path=no --with-pci-ids-path=no --with-systemdsystemunitdir=no
+
+//移植binutils
+
+./configure --host=arm-none-linux-gnueabi --target=arm-linux --prefix=/home/zgd/dmi/binutils CC=arm-none-linux-gnueabi-gcc
+
+
+./configure --cc=arm-none-linux-gnueabi-gcc --host-cc=gcc --enable-cross-compile --target=arm-armv6-linux --prefix=/home/zgd/alsa/mplayer --ar=arm-none-linux-gnueabi-ar --nm=arm-none-linux-gnueabi-nm --ranlib=arm-none-linux-gnueabi-ranlib --disable-dvdread --enable-fbdev --disable-mencoder --disable-liba52 --disable-libmpeg2 --disable-mp3lib --enable-alsa --disable-ossaudio --disable-w32threads --disable-win32dll --disable-win32waveout --disable-live 2>&1 | tee logfile
+
+
+// zlib-1.2.8
+
+CC=arm-linux-gnueabihf-gcc ./configure --prefix=/home/zhao/linux-app/install/zlib-1.2.8
+make && make install
+
+//libpng
+
+./configure CC=arm-linux-gnueabihf-gcc --prefix=/home/zhao/linux-app/install/libpng --host=arm-linux-gnueabihf
+make && make install
+
+
+// directfb
+./configure CC=arm-none-linux-gnueabi-gcc --host=arm-none-linux-gnueabi --enable-freetype --enable-linotype=no --enable-zlib --enable-png=yes --enable-jpeg=yes --with-gfxdrivers=none --enable-x11=no --enable-fbdev --enable-devmem=no --enable-multi=no --with-inputdrivers=all --sysconfdir=/etc --prefix=/home/zgd/graphic/build/directfb
+
+// freetype2
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/freetype2
+
+
+//libjpeg
+
+./configure --host= arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/jpeg/jpeg-9b --enable-shared --enable-static
+
+注意：
+载安装的目录新建include sbin lib man/man1文件夹
+
+
+./configure CC=arm-linux-gnueabihf-gcc --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/jpeg-8d --enable-shared --enable-static
+
+
+//tslib-1.4
+
+./autogen.sh
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/tslib-1.4 ac_cv_func_malloc_0_nonnull=yes
+make
+make install
+
+
+// directfb-example
+./configure --prefix=/home/zgd/graphic/build/example --host=arm-none-linux-gnueabi
+
+图片路径：
+src/df_neo/Makefile:162:AM_CPPFLAGS = -DDATADIR=\"/stv/dfbtest\"
+src/Makefile:285: -DDATADIR=\"/stv/dfbtest\" \
+src/spacedream/Makefile:164: -DDATADIR=\"/stv/dfbtest/spacedream\" \
+字体路径：
+src/Makefile:286: -DFONT=\"/stv/dfbtest/decker.ttf\"
+src/spacedream/Makefile:165: -DFONT=\"/stv/dfbtest/decker.ttf\"
+把这些路径修改为需要的路径，把图片和字体放到板子上相同的路径，就可运行程序。
+
+
+//open-ssl
+./Configure --prefix=/home/zhao/linux-app/install/openssl-0.9.8y os/compiler:arm-linux-gnueabihf-gcc
+
+//open-ssh
+
+./configure --host=arm-linux-gnueabihf --with-libs --with-ssl-dir=/home/zhao/linux-app/install/openssl-0.9.8y --disable-etc-default-login CC=arm-linux-gnueabihf-gcc AR=arm-linux-gnueabihf-ar
+
+// gdb-7.6.2
+//宿主机上使用(应用程序)
+./configure --target=arm-linux --prefix=$HOME/linux-app/install/gdb
+//进入gdb/gdbserver目录（目标板使用)
+./configure --target=arm-linux --host=arm-linux-gnueabihf
+make CC=arm-linux-gnueabihf-gcc
+
+//vsftpd
+修改makefile
+cc=arm-linux-gnueabihf-gcc
+修改vsf_findlibs.sh
+屏蔽：
+# Look for libcap (capabilities)
+#if locate_library /lib/libcap.so.1; then
+#  echo "/lib/libcap.so.1";
+#elif locate_library /lib/libcap.so.2; then
+#  echo "/lib/libcap.so.2";
+#else
+#  locate_library /usr/lib/libcap.so && echo "-lcap";
+#  locate_library /lib/libcap.so && echo "-lcap";
+#  locate_library /lib64/libcap.so && echo "-lcap";
+#fi
+
+// mpg123
+
+./configure CC=arm-linux-gnueabihf-gcc --prefix=/home/zhao/linux-app/install/mpg123 --host=arm-linux-gnueabihf --with-default-audio=oss --enable-static
+
+make
+make install
+
+//libmad
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/libmad 
+
+
+./configure --host=arm-linux-gnueabihf --prefix=$HOME/linux-app/install/iproute2
+
+//utils-linux
+./configure --prefix=/home/zhao/linux-app/install/utils-linux --host=arm-linux-gnueabihf --without-ncurses
+
+//strace
+CC=arm-linux-gnueabihf-gcc LD=arm-linux-gnueabihf-ld RANLIB=arm-linux-gnueabihf-ranlib ./configure --prefix=/home/zhao/linux-app/install/strace --host=arm-linux-gnueabihf
+
+//lzo
+CC=arm-linux-gnueabihf-gcc ./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/lzo
+
+//e2fsprogs
+./configure --host=arm-linux-gnueabihf CC=arm-linux-gnueabihf-gcc --prefix=$HOME/linux-app/install/e2fsprogs
+
+//mtd-utils
+//arm下编译
+make CROSS=arm-linux-gnueabihf- WITHOUT_XATTR=1
+//pc下编译
+make WITHOUT_XATTR=1
+
+//can-utils-4.06
+//先编译libsocketcan库
+./configure --host=arm-linux-gnueabihf --prefix=$HOME/linux-app/install/libsocketcan
+
+//编译can-utils
+./configure --host=arm-linux-gnueabihf --prefix=$HOME/linux-app/install/canutils
+
+//oprofile
+
+./configure --host=arm-linux-gnueabihf --prefix=$HOME/linux-app/install/oprofile/ --with-kernel-support --with-binutils=$HOME/linux-app/install/binutils/
+
+//popt
+echo ac_cv_va_copy=yes > arm-linux.cache  
+./configure CC=arm-linux-gnueabihf-gcc --prefix=$HOME/linux-app/install/popt/ --host=arm-linux-gnueabihf --cache-file=arm-linux.cache 
+
+//binutils
+./configure --host=arm-linux-gnueabihf --prefix=$HOME/linux-app/install/binutils/ --enable-install-libbfd --enable-shared
+
+
+
+//移植tslib-1.0
+
+./configure --prefix=/home/zgd/dmi/build/tslib --host=arm-none-linux-gnueabi ac_cv_func_malloc_0_nonnull=yes
+make 
+make install
+
+
+可能出现问题：
+
+./autogen.sh: 4: autoreconf: not found
+是在不同版本的 tslib 下执行 autogen.sh 产生。它们产生的原因一样,是
+因为没有安装automake 工具,      (ubuntu 10.04)用下面的命令安装好就可以了。
+sudo apt-get install autoconf automake libtool
+
+
+// 移植libjpeg
+
+./configure --host=arm-none-linux-gnueabi --prefix=/home/zgd/dmi/build/libjpeg --enable-shared
+
+
+
+//移植libpng
+
+./configure --host=arm-none-linux-gnueabi --prefix=/home/zgd/dmi/build/libpng
+
+
+//移植freetype
+
+./configure --host=arm-none-linux-gnueabi --prefix=/home/zgd/dmi/build/freetype
+
+
+
+// 移植zlib
+
+CC=arm-none-linux-gnueabi-gcc ./configure --prefix=/home/zgd/dmi/build/zlib
+
+
+// 导入环境变量
+
+export TSLIB=/home/zgd/dmi/build/tslib
+export TSLIB_CFLAGS=$TSLIB/lib
+export TSLIB_LIBS=$TSLIB/lib
+export LIBJPEG=/home/zgd/dmi/build/libjpeg
+export LIBPNG=/home/zgd/dmi/build/libpng
+export FREETYPE=/home/zgd/dmi/build/freetype
+export ZLIB=/home/zgd/dmi/build/zlib
+export LDFLAGS="$LDFLAGS -L$TSLIB/lib -L$LIBJPEG/lib -L$LIBPNG/lib -L$FREETYPE/lib -L$ZLIB/lib -lm"
+export CFLAGS="$CFLAGS -I$TSLIB/include -I$LIBJPEG/include -I$LIBJPEG/include -I$FREETYPE/include -I$ZLIB/include"
+
+
+
+// 移植directFB
+
+./configure --host=arm-none-linux-gnueabi --prefix=/home/zgd/dmi/build/directFB --with-gfxdrivers=none --with-inputdrivers=all --enable-png --enable-jpeg --disable-tiff --enable-zlib --enable-sdl=no --enable-gif=no --disable-x11 --enable-debug --sysconfdir=/etc --enable-fbdev
+
+
+//移植cairo
+
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+./configure --host=arm-none-linux-gnueabi --prefix=/home/zgd/dmi/build/cairo --without-x --disable-xlib --disable-xlib-xrender --enable-directfb --enable-freetype --disable-win32 --enable-pdf --enable-ps --disable-svg --enable-png
+
+
+
+setenv bootargs console=ttyO0,115200n8 noinitrd rw root=/dev/nfs nfsroot=192.168.168.137:/home/zhao/nfs/rootfs,nolock rw ip=dhcp
+setenv bootargs_defaults console=ttyO0,115200n8 noinitrd rw root=/dev/nfs nfsroot=192.168.168.137:/home/zhao/nfs/rootfs,nolock rw ip=dhcp
+
+//ipref 测试网络负载
+./configure --prefix=/home/zhao/linux-app/install/iperf --host=arm-linux-gnueabihf
+ 
+config.h里加上#undef rpl_malloc
+在makefile文件中
+在CFLAGS和CXXFLAGS都加-static参数
+CFLAGS = -O2 -static
+CXXFLAGS = -O2 -static
+perf使用:
+1.在pc上以服务器模式启动iperf
+# iperf -s
+2.将交叉编译的iperf拷贝到arm开发板上
+# ./iperf -c 192.168.2.65 -i 5 -t 60
+//192.168.2.65是我的pc端ip地址
+//-i 5表示arm板子上启动的client每5s打印一下速度信息;
+//-t 60表示测试60s;
+make 
+make install
+
+
+//memtester
+
+vi conf-cc
+vi conf-ld
+把这两个文件中的cc 改成arm-linux-gnueabihf-gcc就可以了，并使用 -static 参数，使用静态链接库编译，否则生成的memtester可能没法用，然后make。会自动生成memtester
+
+//ltp
+./configure CC=arm-linux-gnueabihf-gcc --prefix=$HOME/linux-app/install/ltp --host=arm-linux-gnueabihf CFLAGS="-static -fPIC" LDFLAGS="-static -pthread"
+
+./configure CC=arm-linux-gnueabihf-gcc --prefix=$HOME/linux-app/install/ltp --host=arm-linux-gnueabihf
+
+//can-utils
+./autogen.sh
+./configure --prefix=$HOME/linux-app/install/canutils --host=arm-linux-gnueabihf
+
+//netperf
+echo "ac_cv_func_setpgrp_void=yes" > config.cache
+./configure CC=arm-linux-gnueabihf-gcc --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/netperf --config-cache
+
+
+//tcl
+export tcl_cv_type_64bit="long long"
+export ac_cv_c_bigendian=no
+export tcl_cv_strtod_buggy=1
+export ac_cv_func_strstr=yes
+export ac_cv_func_opendir=yes
+./configure --prefix=/home/zhao/linux-app/install/tcl/ --host=arm-linux-gnueabihf
+
+//expect
+
+./configure --prefix=/home/zhao/linux-app/install/expect/ --host=arm-linux-gnueabihf --with-tcl=/home/zhao/linux-app/install/tcl/lib --with-tclinclude=/home/zhao/linux-app/install/tcl/include --with-x=no
+
+修改makefile
+CC = gcc 改为 CC = arm-linux-gnueabihf-gcc
+make
+执行这个语句时会出现一下错误
+    -->/bin/sh: /home/baohm/workbench/tool/tcl8.6.1/unix/tclsh: cannot execute binary file
+   这是因为交叉编译出的tclsh不能再原PC上运行，所以需要用X86上的tclsh替换，以使expect的安装继续，
+   运行
+    #cp /usr/bin/tclsh /home/baohm/workbench/tool/tcl8.6.1/unix/
+make install
+
+
+// rsync
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/rsync
+
+
+//libelf
+ac_cv_prog_CC=arm-linux-gnueabihf-gcc ac_cv_prog_cc_cross=yes ./configure --prefix=/home/zhao/linux-app/install/libelf --enable-shared
+
+//elfutils
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/elfutils
+
+//ltrace
+
+./configure --prefix=/home/zhao/linux-app/install/ltrace --host=arm-linux-gnueabihf --enable-static=yes --enable-shared=no
+
+
+./configure --prefix=/home/zhao/linux-app/install/ltrace --host=arm-linux-gnueabihf CFLAGS="-I/home/zhao/linux-app/install/elfutils/include/" LDFLAGS="-L/home/zhao/linux-app/install/elfutils/lib" --enable-static=yes --enable-shared=no
+
+
+
+//valgrind 
+./autogen.sh
+modify armv7* armv7*|arm in configure file 
+./configure --host=arm-linux-gnueabihf CC=arm-linux-gnueabihf-gcc CPP=arm-linux-gnueabihf-cpp CXX=arm-linux-gnueabihf-g++ --prefix=/home/zhao/linux-app/install/valgrind
+
+export VALGRIND_LIB="/home/zhao/linux-app/install/valgrind"
+
+//fftw
+./configure --host=arm-linux-gnueabihf --enable-shared --prefix=/home/zhao/linux-app/install/fft
+
+//berkely db
+进入build_unix目录
+运行
+../dist/configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/berkely --enable-shared --disable-cryptography --disable-hash --disable-queue --disable-replication -disable-satistics --disable-verify --disable-compat185 --disable-cxx --disable-debug_rop --disable-debug_wop --disable-diagnostic --disable-dump185 --disable-java --disable-mingw --disable-o_direct --disable-posixmutexes --disable-pthread_api --disable-smallbuild --disable-tcl --disable-test --disable-uimutexes --enable-umrw --enable-fast-install --disable-libtool-lock
+
+
+//sqlite3
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/sqlite3
+
+
+
+CC=arm-linux-gnueabihf-gcc ./configure --prefix=/home/zhao/linux-app/install/glibc-2.18 --host=arm-linux-gnueabihf --cache-file=arm-linux.cache
+
+
+../glibc-2.16.0/configure --host=arm-linux-gnueabihf --enable-add-ons --prefix=/home/zhao/linux-app/install/glibc-2.16 libc_cv_forced_unwind=yes libc_cv_c_cleanup=yes --with-tls --disable-profile
+
+
+//lrzsz
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/lrzsz
+make CC=arm-linux-gnueabihf-gcc
+
+
+//libpcap
+
+./configure CC=arm-linux-gnueabihf-gcc --host=arm-linux-gnueabihf --with-pcap=linux --prefix=/home/zhao/linux-app/install/libpcap
+
+//tcpdump
+
+./configure CC=arm-linux-gnueabihf-gcc --host=arm-linux-gnueabihf ac_cv_linux_vers=2 --prefix=/home/zhao/linux-app/install/tcpdump CFLAGS="-I/home/zhao/linux-app/install/libpcap/include/" LDFLAGS="-L/home/zhao/linux-app/install/libpcap/lib"
+
+
+//procps-ng
+ echo "ac_cv_func_realloc_0_nonnull=yes" > arm-linux.cache
+ echo "ac_cv_func_malloc_0_nonnull=yes" >> arm-linux.cache
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/procps-ng/ --enable-static --disable-shared --with-ncurses --cache-file=arm-linux.cache CC=arm-linux-gnueabihf-gcc CFLAGS="-I/home/zhao/linux-app/install/ncurses/include -I/home/zhao/linux-app/install/ncurses/include/ncurses" LDFLAGS="-L/home/zhao/linux-app/install/ncurses/lib" NCURSES_CFLAGS="-I/home/zhao/linux-app/install/ncurses/include -I/home/zhao/linux-app/install/ncurses/include/ncurses" NCURSES_LIBS="-L/home/zhao/linux-app/install/ncurses/lib -lncurses"
+
+
+//ncurses
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/ncurses/ --enable-static
+--disable-shared CC=arm-linux-gnueabihf-gcc
+
+
+//tar
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/tar/
+
+//gzip
+
+./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/gzip/
+
+
+//stress-1.0.4
+CC=arm-linux-gnueabihf-gcc ./configure --host=arm-linux-gnueabihf --prefix=/home/zhao/linux-app/install/stress/
+
+
+//lmben-3.0-a9
+First,enter src directory
+modify makefile
+CC=arm-linux-gnueabihf-gcc
+OS=arm-linux
+then,make
+
+
+
+
+
+
+
+  
